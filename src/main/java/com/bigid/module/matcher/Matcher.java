@@ -2,29 +2,27 @@ package com.bigid.module.matcher;
 
 import com.bigid.domain.Location;
 import com.bigid.module.aggregator.Aggregator;
-import com.bigid.util.Config;
 import org.ahocorasick.trie.Emit;
 import org.ahocorasick.trie.Trie;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Matcher implements Runnable{
-
-    HashMap<String, List<Location>> matcherResult = new HashMap<>();
+    private Map<String, List<Location>> matcherResult = new HashMap<>();
     Aggregator aggregator = Aggregator.getInstance();
     private Integer lineCount;
     private Integer charCountByTextPart;
     private Integer charCountByLine = 0;
-    private String matcherName;
     private List<String> textPart;
-    public Matcher(Integer lineCount, Integer charCountByTextPart, List<String> textPart, String matcherName){
+    private Trie trie;
+
+    public Matcher(Integer lineCount, Integer charCountByTextPart, List<String> textPart, Trie trie){
         this.lineCount = lineCount;
         this.charCountByTextPart = charCountByTextPart;
         this.textPart = textPart;
-        this.matcherName = matcherName;
+        this.trie = trie;
     }
 
     private void setResult(Collection<Emit> emits, Integer lineOffset){
@@ -42,11 +40,6 @@ public class Matcher implements Runnable{
 
     @Override
     public void run() {
-        Trie trie = Trie.builder()
-                .ignoreOverlaps()
-                .ignoreCase()
-                .onlyWholeWords()
-                .addKeywords(Config.SEARCH_TOKEN).build();
         charCountByLine = 0;
         for(String line : textPart) {
             Collection<Emit> emits = trie.parseText(line);
@@ -59,10 +52,4 @@ public class Matcher implements Runnable{
         aggregator.aggregateResults(matcherResult);
     }
 
-    private void report(String order){
-        Date d = new Date();
-        SimpleDateFormat ft = new SimpleDateFormat("hh:mm:ss.SSS");
-        System.out.println(order + " Time for"
-                + " task name - "+ matcherName +" = " +ft.format(d));
-    }
 }
